@@ -1,0 +1,2612 @@
+﻿<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Respiration App</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-a: #102231;
+      --bg-b: #102e2b;
+      --bg-c: #14263f;
+      --panel: rgba(10, 18, 32, 0.64);
+      --panel-strong: rgba(16, 28, 45, 0.84);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f4f1ea;
+      --muted: rgba(244, 241, 234, 0.72);
+      --accent: #8cdcc9;
+      --accent-2: #eeb16d;
+      --accent-3: #76b8ff;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
+      --orb-scale: 0.74;
+      --phase-progress: 0deg;
+      --scene-opacity: 1;
+      --motion-play: running;
+      --phase-glow: rgba(140, 220, 201, 0.36);
+      --phase-fill: linear-gradient(145deg, rgba(140, 220, 201, 0.32), rgba(118, 184, 255, 0.18));
+      --button-font: "Trebuchet MS", "Aptos", "Segoe UI", sans-serif;
+      --display-font: "Palatino Linotype", "Book Antiqua", Georgia, serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: var(--button-font);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05), transparent 24%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b) 55%, var(--bg-c));
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body {
+      position: relative;
+      transition: background 500ms ease, color 300ms ease;
+    }
+
+    body[data-scene="aurora"] {
+      --bg-a: #091923;
+      --bg-b: #10362f;
+      --bg-c: #1d2648;
+      --accent: #8cdcc9;
+      --accent-2: #f0b06e;
+      --accent-3: #7bc9ef;
+      --panel: rgba(10, 18, 32, 0.64);
+      --panel-strong: rgba(16, 28, 45, 0.84);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #f4f1ea;
+      --muted: rgba(244, 241, 234, 0.72);
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    body[data-scene="sky"] {
+      --bg-a: #7cd6ff;
+      --bg-b: #7cbaff;
+      --bg-c: #ffd676;
+      --panel: rgba(31, 54, 96, 0.22);
+      --panel-strong: rgba(34, 66, 112, 0.34);
+      --border: rgba(255, 255, 255, 0.28);
+      --text: #10233d;
+      --muted: rgba(16, 35, 61, 0.72);
+      --accent: #ff8a5c;
+      --accent-2: #ffe17d;
+      --accent-3: #4f83ff;
+      --shadow: 0 22px 60px rgba(15, 35, 77, 0.18);
+    }
+
+    body[data-scene="bubbles"] {
+      --bg-a: #7de0f3;
+      --bg-b: #64b3ff;
+      --bg-c: #9c8dff;
+      --panel: rgba(31, 41, 97, 0.22);
+      --panel-strong: rgba(33, 51, 119, 0.34);
+      --border: rgba(255, 255, 255, 0.26);
+      --text: #132240;
+      --muted: rgba(19, 34, 64, 0.72);
+      --accent: #ff90a9;
+      --accent-2: #ffe27c;
+      --accent-3: #5b94ff;
+      --shadow: 0 22px 60px rgba(24, 38, 78, 0.18);
+    }
+
+    body[data-scene="stars"] {
+      --bg-a: #06101d;
+      --bg-b: #0c1630;
+      --bg-c: #1a2554;
+      --panel: rgba(8, 16, 34, 0.62);
+      --panel-strong: rgba(12, 22, 46, 0.82);
+      --border: rgba(189, 214, 255, 0.2);
+      --text: #edf3ff;
+      --muted: rgba(237, 243, 255, 0.74);
+      --accent: #9bc8ff;
+      --accent-2: #f5c27c;
+      --accent-3: #8cdcc9;
+      --shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+    }
+
+    body[data-scene="purpleStars"] {
+      --bg-a: #140e29;
+      --bg-b: #2b1c55;
+      --bg-c: #5a4694;
+      --panel: rgba(23, 16, 47, 0.56);
+      --panel-strong: rgba(33, 24, 66, 0.78);
+      --border: rgba(225, 204, 255, 0.22);
+      --text: #f6efff;
+      --muted: rgba(246, 239, 255, 0.74);
+      --accent: #caa8ff;
+      --accent-2: #ffbf92;
+      --accent-3: #9edcff;
+      --shadow: 0 22px 60px rgba(14, 8, 34, 0.36);
+    }
+
+    body[data-visuals="off"] {
+      --scene-opacity: 0;
+      --bg-a: #09121f;
+      --bg-b: #0d1829;
+      --bg-c: #13233a;
+    }
+
+    body[data-visuals="off"]::after {
+      opacity: 0.08;
+    }
+
+    body[data-motion="off"] { --motion-play: paused; }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.07), transparent 22%),
+        radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.05), transparent 18%),
+        linear-gradient(transparent, rgba(255, 255, 255, 0.02));
+      mix-blend-mode: screen;
+      opacity: 0.4;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: var(--scene-opacity);
+      transition: opacity 260ms ease;
+    }
+
+    .backdrop::before,
+    .backdrop::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 260ms ease;
+    }
+
+    body[data-scene="stars"] .backdrop::before {
+      opacity: 0.92;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.92) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 23% 68%, rgba(255, 245, 225, 0.8) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 37% 32%, rgba(177, 214, 255, 0.88) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 51% 14%, rgba(255, 255, 255, 0.96) 0 1.1px, transparent 1.9px),
+        radial-gradient(circle at 62% 59%, rgba(255, 244, 214, 0.78) 0 1.3px, transparent 2.1px),
+        radial-gradient(circle at 74% 26%, rgba(189, 225, 255, 0.84) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 85% 77%, rgba(255, 255, 255, 0.94) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 92% 42%, rgba(255, 238, 204, 0.8) 0 1.1px, transparent 1.9px);
+      background-size: 100% 100%;
+      animation: twinkle 10s ease-in-out infinite;
+    }
+
+    body[data-scene="stars"] .backdrop::after {
+      opacity: 0.5;
+      background-image:
+        radial-gradient(circle at 18% 76%, rgba(255, 255, 255, 0.72) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 29% 22%, rgba(173, 210, 255, 0.72) 0 0.8px, transparent 1.6px),
+        radial-gradient(circle at 44% 86%, rgba(255, 244, 216, 0.64) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 58% 44%, rgba(255, 255, 255, 0.72) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 69% 12%, rgba(181, 220, 255, 0.64) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 81% 63%, rgba(255, 240, 208, 0.66) 0 1px, transparent 1.8px);
+      background-size: 100% 100%;
+      animation: twinkle 14s ease-in-out infinite reverse;
+    }
+
+    .glow,
+    .spark,
+    .line {
+      position: absolute;
+      animation-play-state: var(--motion-play);
+    }
+
+    .glow {
+      border-radius: 50%;
+      filter: blur(16px);
+      opacity: 0.64;
+      mix-blend-mode: screen;
+      animation: drift 18s ease-in-out infinite;
+    }
+
+    .glow.g1 {
+      width: 42vw;
+      height: 42vw;
+      min-width: 240px;
+      min-height: 240px;
+      left: -10vw;
+      top: -8vw;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0));
+    }
+
+    .glow.g2 {
+      width: 30vw;
+      height: 30vw;
+      min-width: 220px;
+      min-height: 220px;
+      right: 4vw;
+      top: 6vh;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+      animation-duration: 23s;
+    }
+
+    .glow.g3 {
+      width: 34vw;
+      height: 34vw;
+      min-width: 220px;
+      min-height: 220px;
+      left: 48%;
+      bottom: -12vw;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0));
+      animation-duration: 26s;
+    }
+
+    .spark {
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.48);
+      box-shadow: 0 0 18px rgba(255, 255, 255, 0.36);
+      animation: floatUp linear infinite;
+    }
+
+    .spark.s1 { width: 8px; height: 8px; left: 10%; bottom: -2rem; animation-duration: 16s; animation-delay: -5s; }
+    .spark.s2 { width: 10px; height: 10px; left: 26%; bottom: -4rem; animation-duration: 20s; animation-delay: -7s; }
+    .spark.s3 { width: 6px; height: 6px; left: 44%; bottom: -2rem; animation-duration: 14s; animation-delay: -3s; }
+    .spark.s4 { width: 12px; height: 12px; left: 58%; bottom: -5rem; animation-duration: 18s; animation-delay: -9s; }
+    .spark.s5 { width: 7px; height: 7px; left: 72%; bottom: -3rem; animation-duration: 15s; animation-delay: -1s; }
+    .spark.s6 { width: 9px; height: 9px; left: 88%; bottom: -6rem; animation-duration: 21s; animation-delay: -6s; }
+
+    .line {
+      inset: 0;
+      background:
+        linear-gradient(115deg, transparent 0 43%, rgba(255, 255, 255, 0.08) 50%, transparent 57%),
+        linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      mix-blend-mode: overlay;
+      animation: sweep 11s ease-in-out infinite;
+    }
+
+    body[data-scene="stars"] .glow {
+      filter: blur(22px);
+      opacity: 0.28;
+    }
+
+    body[data-scene="stars"] .spark {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.5);
+      animation-name: twinkleFloat;
+      animation-timing-function: ease-in-out;
+    }
+
+    body[data-scene="stars"] .line {
+      opacity: 0.32;
+      background:
+        linear-gradient(115deg, transparent 0 43%, rgba(151, 198, 255, 0.08) 50%, transparent 57%),
+        linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+    }
+
+    body[data-scene="purpleStars"] .backdrop::before {
+      opacity: 0.9;
+      background-image:
+        radial-gradient(circle at 12% 18%, rgba(255, 240, 255, 0.92) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 23% 68%, rgba(245, 220, 255, 0.82) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 37% 32%, rgba(214, 194, 255, 0.86) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 51% 14%, rgba(255, 247, 255, 0.96) 0 1.1px, transparent 1.9px),
+        radial-gradient(circle at 62% 59%, rgba(255, 214, 238, 0.76) 0 1.3px, transparent 2.1px),
+        radial-gradient(circle at 74% 26%, rgba(220, 204, 255, 0.84) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 85% 77%, rgba(255, 241, 255, 0.92) 0 1.2px, transparent 2px),
+        radial-gradient(circle at 92% 42%, rgba(255, 222, 245, 0.78) 0 1.1px, transparent 1.9px);
+      background-size: 100% 100%;
+      animation: twinkle 10s ease-in-out infinite;
+    }
+
+    body[data-scene="purpleStars"] .backdrop::after {
+      opacity: 0.54;
+      background-image:
+        radial-gradient(circle at 18% 76%, rgba(255, 236, 255, 0.7) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 29% 22%, rgba(221, 198, 255, 0.72) 0 0.8px, transparent 1.6px),
+        radial-gradient(circle at 44% 86%, rgba(255, 219, 238, 0.66) 0 1px, transparent 1.8px),
+        radial-gradient(circle at 58% 44%, rgba(255, 242, 255, 0.72) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 69% 12%, rgba(206, 187, 255, 0.68) 0 0.9px, transparent 1.7px),
+        radial-gradient(circle at 81% 63%, rgba(255, 207, 234, 0.68) 0 1px, transparent 1.8px);
+      background-size: 100% 100%;
+      animation: twinkle 14s ease-in-out infinite reverse;
+    }
+
+    body[data-scene="purpleStars"] .glow {
+      filter: blur(24px);
+      opacity: 0.34;
+    }
+
+    body[data-scene="purpleStars"] .spark {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(248, 236, 255, 0.92);
+      box-shadow: 0 0 18px rgba(214, 157, 255, 0.48);
+      animation-name: twinkleFloat;
+      animation-timing-function: ease-in-out;
+    }
+
+    body[data-scene="purpleStars"] .line {
+      opacity: 0.38;
+      background:
+        linear-gradient(115deg, transparent 0 40%, rgba(208, 156, 255, 0.12) 50%, transparent 60%),
+        linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app {
+      width: min(1280px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand { display: grid; gap: 4px; }
+
+    .brand-tag {
+      font-size: 0.75rem;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-family: var(--display-font);
+      font-size: clamp(2.1rem, 3.2vw, 3.4rem);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .switches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .segmented {
+      display: inline-flex;
+      gap: 6px;
+      padding: 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+    }
+
+    button,
+    input { font: inherit; }
+
+    .segmented button,
+    .chip,
+    .icon-chip,
+    .control-button,
+    .mode-button,
+    .preset-button {
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+    }
+
+    .segmented button {
+      min-width: 68px;
+      padding: 10px 16px;
+      color: var(--muted);
+      background: transparent;
+      border-radius: 999px;
+    }
+
+    .segmented button.active {
+      background: rgba(255, 255, 255, 0.14);
+      color: var(--text);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .segmented button:hover,
+    .chip:hover,
+    .icon-chip:hover,
+    .control-button:hover,
+    .mode-button:hover,
+    .preset-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 1.05fr) minmax(320px, 1.3fr) minmax(250px, 0.95fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .stack { display: grid; gap: 18px; align-content: start; }
+
+    .card,
+    .stage {
+      position: relative;
+      border-radius: 28px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+      background-color: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+    }
+
+    .card::before,
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 45%);
+      pointer-events: none;
+    }
+
+    .card {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+    }
+
+    .mini {
+      font-size: 0.88rem;
+      letter-spacing: 0.04em;
+      text-transform: none;
+    }
+
+    .mode-grid,
+    .preset-grid,
+    .phase-grid,
+    .chip-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+    .preset-grid,
+    .chip-grid { grid-template-columns: repeat(auto-fit, minmax(94px, 1fr)); }
+
+    .mode-button,
+    .preset-button,
+    .chip,
+    .icon-chip {
+      width: 100%;
+      padding: 14px 14px 13px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid transparent;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    }
+
+    .mode-button strong,
+    .preset-button strong {
+      display: block;
+      font-size: 0.98rem;
+      margin-bottom: 4px;
+    }
+
+    .mode-button span,
+    .preset-button span {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .mode-button.active,
+    .preset-button.active,
+    .chip.active,
+    .icon-chip.active {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 10px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .phase-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .phase-field {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .phase-field label {
+      font-size: 0.84rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .phase-field input,
+    .inline-field input {
+      width: 100%;
+      appearance: textfield;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(0, 0, 0, 0.16);
+      color: var(--text);
+      outline: none;
+    }
+
+    .phase-field input::-webkit-outer-spin-button,
+    .phase-field input::-webkit-inner-spin-button,
+    .inline-field input::-webkit-outer-spin-button,
+    .inline-field input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .chips {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .chip {
+      padding: 13px 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid transparent;
+    }
+
+    .inline-field,
+    .switch-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      font-size: 0.84rem;
+    }
+
+    .inline-field input {
+      width: 90px;
+      text-align: center;
+    }
+
+    .switch {
+      position: relative;
+      width: 58px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .switch input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .track {
+      width: 58px;
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: background 180ms ease;
+    }
+
+    .track::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--text);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
+      transition: transform 180ms ease;
+    }
+
+    .switch input:checked + .track {
+      background: linear-gradient(135deg, var(--accent), var(--accent-3));
+    }
+
+    .switch input:checked + .track::after {
+      transform: translateX(26px);
+    }
+
+    .stage {
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+      min-height: 100%;
+      background-color: var(--panel-strong);
+    }
+    .session-bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .session-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+      transition: width 120ms linear;
+    }
+
+    .orb-wrap {
+      display: grid;
+      place-items: center;
+      padding: 12px 0;
+    }
+
+    .orb-shell {
+      position: relative;
+      width: min(84vw, 420px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.1), transparent 62%),
+        conic-gradient(from -90deg, rgba(255, 255, 255, 0.18) 0deg, rgba(255, 255, 255, 0.08) var(--phase-progress), rgba(255, 255, 255, 0.04) var(--phase-progress), rgba(255, 255, 255, 0.04) 360deg);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 0 18px rgba(255, 255, 255, 0.02), 0 24px 70px rgba(0, 0, 0, 0.24);
+      overflow: hidden;
+    }
+
+    .orb-shell::before,
+    .orb-shell::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      inset: 10%;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      animation: spin 22s linear infinite;
+      animation-play-state: var(--motion-play);
+    }
+
+    .orb-shell::after {
+      inset: 6%;
+      border-style: dashed;
+      opacity: 0.34;
+      animation-direction: reverse;
+      animation-duration: 26s;
+    }
+
+    .orbit-dots {
+      position: absolute;
+      inset: 0;
+    }
+
+    .orbit-dots span {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
+      transform: translate(-50%, -50%);
+      transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .orbit-dots span.active {
+      background: var(--accent);
+      box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.05), 0 0 18px rgba(255, 255, 255, 0.18);
+      transform: translate(-50%, -50%) scale(1.18);
+    }
+
+    .orb {
+      position: relative;
+      width: 62%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px;
+      background: var(--phase-fill);
+      box-shadow: inset 0 0 40px rgba(255, 255, 255, 0.12), 0 0 40px var(--phase-glow);
+      transform: scale(var(--orb-scale));
+      transition: transform 100ms linear, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .orb::before {
+      content: "";
+      position: absolute;
+      inset: 10%;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .count {
+      font-family: var(--display-font);
+      font-size: clamp(3rem, 7vw, 5.2rem);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .phase-name {
+      font-size: 1rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      min-width: 110px;
+      padding: 11px 16px;
+      text-align: center;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .control-button {
+      min-width: 116px;
+      padding: 14px 18px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .control-button.primary {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .control-button[disabled] {
+      opacity: 0.45;
+      cursor: default;
+      transform: none;
+    }
+
+    .sound-grid .icon-chip {
+      min-height: 72px;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      text-align: center;
+    }
+
+    .icon-chip small {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .guide-panel {
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .guide-panel summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 14px 16px;
+      color: var(--text);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.84rem;
+    }
+
+    .guide-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .guide-panel[open] summary {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .guide-body {
+      display: grid;
+      gap: 8px;
+      padding: 0 16px 16px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .guide-body p {
+      margin: 0;
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .settings-row .control-button {
+      min-width: 0;
+      width: 100%;
+      padding: 12px 14px;
+    }
+
+    .settings-status {
+      min-height: 1rem;
+      margin-top: 10px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .footer-note {
+      margin-top: 2px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .watermark {
+      justify-self: end;
+      width: fit-content;
+      margin-top: 6px;
+      margin-right: 4px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(6, 10, 18, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.58);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    body[data-audience="child"] .watermark {
+      background: rgba(255, 255, 255, 0.24);
+      color: rgba(16, 35, 61, 0.52);
+    }
+
+    body[data-visuals="off"] .watermark {
+      background: rgba(6, 10, 18, 0.22);
+      color: rgba(255, 255, 255, 0.54);
+    }
+
+    body[dir="rtl"] .brand-tag,
+    body[dir="rtl"] .card-head,
+    body[dir="rtl"] .phase-field label,
+    body[dir="rtl"] .inline-field,
+    body[dir="rtl"] .switch-row,
+    body[dir="rtl"] .phase-name,
+    body[dir="rtl"] .pill,
+    body[dir="rtl"] .control-button,
+    body[dir="rtl"] .footer-note { letter-spacing: 0.02em; }
+
+    body[dir="rtl"] .topbar { direction: rtl; }
+    body[dir="rtl"] .switches { justify-content: flex-start; }
+    body[dir="rtl"] .inline-field input { direction: ltr; }
+    body[dir="rtl"] .watermark { justify-self: start; margin-right: 0; margin-left: 4px; letter-spacing: 0.05em; }
+
+    @media (max-width: 1120px) {
+      .layout { grid-template-columns: 1fr; }
+      .stage { order: -1; }
+      .orb-shell { width: min(84vw, 390px); }
+    }
+
+    @media (max-width: 640px) {
+      .app-shell { padding: 14px; }
+      .topbar { align-items: flex-start; }
+      .switches { width: 100%; justify-content: flex-start; }
+      .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .phase-grid { grid-template-columns: 1fr; }
+      .orb-shell { width: min(88vw, 340px); }
+      .control-button { flex: 1 1 30%; min-width: 92px; }
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(2vw, 2vh, 0) scale(1.08); }
+    }
+
+    @keyframes floatUp {
+      from { transform: translate3d(0, 0, 0) scale(0.92); opacity: 0; }
+      12% { opacity: 0.92; }
+      to { transform: translate3d(0, -110vh, 0) scale(1.15); opacity: 0; }
+    }
+
+    @keyframes sweep {
+      0%, 100% { transform: translateX(-8%) translateY(0); opacity: 0.4; }
+      50% { transform: translateX(8%) translateY(-2%); opacity: 0.64; }
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.62; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+
+    @keyframes twinkleFloat {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.42; }
+      50% { transform: translateY(-18px) scale(1.35); opacity: 1; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body data-audience="adult" data-scene="aurora" data-visuals="on" data-motion="on">
+  <div class="backdrop" aria-hidden="true">
+    <div class="glow g1"></div>
+    <div class="glow g2"></div>
+    <div class="glow g3"></div>
+    <div class="spark s1"></div>
+    <div class="spark s2"></div>
+    <div class="spark s3"></div>
+    <div class="spark s4"></div>
+    <div class="spark s5"></div>
+    <div class="spark s6"></div>
+    <div class="line"></div>
+  </div>
+
+  <div class="app-shell">
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-tag" data-i18n="brandTag">Respiration</div>
+          <h1 data-i18n="title">Breathe</h1>
+        </div>
+
+        <div class="switches">
+          <div class="segmented" id="languageSwitch" aria-label="Language">
+            <button type="button" data-language="en" class="active">EN</button>
+            <button type="button" data-language="he">עברית</button>
+          </div>
+
+          <div class="segmented" id="audienceSwitch" aria-label="Audience">
+            <button type="button" data-audience-option="adult" class="active" data-i18n="adult">Adult</button>
+            <button type="button" data-audience-option="child" data-i18n="child">Child</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <section class="stack">
+          <div class="card">
+            <div class="card-head"><span data-i18n="mode">Mode</span></div>
+            <div class="mode-grid" id="modeGrid"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span data-i18n="pattern">Pattern</span>
+              <span class="mini" id="patternSummary">5 - 5</span>
+            </div>
+            <div class="preset-grid" id="presetGrid"></div>
+            <div class="phase-grid" id="phaseGrid"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <span data-i18n="session">Session</span>
+              <span class="mini" id="sessionSummary">3 min</span>
+            </div>
+            <div class="chips" id="durationGrid"></div>
+            <label class="inline-field">
+              <span data-i18n="customMinutes">Custom</span>
+              <input type="number" id="customMinutes" min="1" max="30" step="1" value="3">
+            </label>
+          </div>
+        </section>
+
+        <section class="stage">
+          <div class="session-bar" aria-hidden="true"><div class="session-fill" id="sessionFill"></div></div>
+
+          <div class="orb-wrap">
+            <div class="orb-shell" id="orbShell">
+              <div class="orbit-dots" id="orbitDots"></div>
+              <div class="orb" id="orb">
+                <div>
+                  <div class="count" id="countValue">5</div>
+                  <div class="phase-name" id="phaseName">Inhale</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-row">
+            <div class="pill" id="timeLeft">03:00</div>
+            <div class="pill" id="cyclePill">5 - 5</div>
+          </div>
+
+          <div class="control-row">
+            <button type="button" class="control-button primary" id="playButton" data-i18n="play">Play</button>
+            <button type="button" class="control-button" id="pauseButton" data-i18n="pause" disabled>Pause</button>
+            <button type="button" class="control-button" id="resetButton" data-i18n="reset">Reset</button>
+          </div>
+
+          <div class="footer-note" id="hintLine">Slow and steady.</div>
+        </section>
+
+        <section class="stack">
+          <div class="card">
+            <div class="card-head"><span data-i18n="sound">Sound</span></div>
+            <div class="chip-grid sound-grid" id="soundGrid"></div>
+            <div class="switch-row">
+              <span data-i18n="soundToggle">Audio</span>
+              <label class="switch">
+                <input type="checkbox" id="audioToggle">
+                <span class="track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span data-i18n="visuals">Visuals</span></div>
+            <div class="chip-grid" id="sceneGrid"></div>
+            <div class="switch-row">
+              <span data-i18n="visualsToggle">Interactive</span>
+              <label class="switch">
+                <input type="checkbox" id="visualsToggle" checked>
+                <span class="track"></span>
+              </label>
+            </div>
+          </div>
+        
+          <div class="card">
+            <div class="card-head"><span data-i18n="guidance">Guidance</span></div>
+            <details class="guide-panel">
+              <summary data-i18n="adultGuidance">Adults</summary>
+              <div class="guide-body">
+                <p data-i18n="guideCoherence">Coherence: calm alertness.</p>
+                <p data-i18n="guideRelax">Relax & Focus: relax body, focus mind.</p>
+                <p data-i18n="guideTranquility">Tranquility: lower stress, ready for sleep.</p>
+              </div>
+            </details>
+            <details class="guide-panel">
+              <summary data-i18n="childGuidance">Kids</summary>
+              <div class="guide-body">
+                <p data-i18n="guideChildIntro">3-1-5: smell a flower, hold, then blow out slowly.</p>
+                <p data-i18n="guideChildWhy">Short, simple, playful rhythm for little kids.</p>
+              </div>
+            </details>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><span data-i18n="settings">Settings</span></div>
+            <div class="settings-row">
+              <button type="button" class="control-button primary" id="saveSettingsButton" data-i18n="save">Save</button>
+              <button type="button" class="control-button" id="resetSavedButton" data-i18n="reset">Reset</button>
+            </div>
+            <div class="settings-status" id="settingsStatus" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="watermark">Created by Ilay Sorek</div>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        brandTag: "Respiration",
+        title: "Breathe",
+        adult: "Adult",
+        child: "Child",
+        mode: "Mode",
+        pattern: "Pattern",
+        session: "Session",
+        customMinutes: "Custom",
+        sound: "Sound",
+        soundToggle: "Audio",
+        visuals: "Background",
+        visualsToggle: "Interactive",
+        settings: "Settings",
+        save: "Save",
+        settingsSaved: "Saved",
+        settingsReset: "Restored",
+        play: "Play",
+        pause: "Pause",
+        reset: "Reset",
+        done: "Done",
+        inhale: "Inhale",
+        hold1: "Hold",
+        exhale: "Exhale",
+        hold2: "Hold",
+        coherence: "Coherence",
+        relax: "Relax & Focus",
+        tranquility: "Tranquility",
+        childFlow: "Kids",
+        coherenceHint: "Steady in / out",
+        relaxHint: "Box breathing",
+        tranquilityHint: "4 - 7 - 8",
+        childFlowHint: "3 - 1 - 5",
+        hintAdult: "Slow and steady.",
+        hintChild: "Breathe with the glow.",
+        sceneAurora: "Aurora",
+        sceneDusk: "Dusk",
+        sceneForest: "Forest",
+        sceneSky: "Sky",
+        sceneBubbles: "Bubbles",
+        sceneStars: "Stars",
+        scenePurpleStars: "Purple Stars",
+        guidance: "Guidance",
+        adultGuidance: "Adults",
+        childGuidance: "Kids",
+        guideCoherence: "Coherence: calm alertness.",
+        guideRelax: "Relax & Focus: relax body, focus mind.",
+        guideTranquility: "Tranquility: lower stress, ready for sleep.",
+        guideChildIntro: "3-1-5: smell a flower, hold, then blow out slowly.",
+        guideChildWhy: "Short, simple, playful rhythm for little kids.",
+        audioOff: "Cue Only",
+        audioOffHint: "Cue tones only",
+        audioCalm: "6 Hz Calm",
+        audioCalmHint: "Binaural drone",
+        audioFocus: "8 Hz Focus",
+        audioFocusHint: "Clear drone",
+        audioDrift: "Tanpura",
+        audioDriftHint: "Warm drone",
+        audioSparkle: "Soft Chimes",
+        audioSparkleHint: "Light melody",
+        audioDream: "Warm Pad",
+        audioDreamHint: "Soft texture",
+        minutesShort: "min"
+      },
+      he: {
+        brandTag: "נשימה",
+        title: "לנשום",
+        adult: "מבוגרים",
+        child: "ילדים",
+        mode: "מצב",
+        pattern: "קצב",
+        session: "משך",
+        customMinutes: "מותאם",
+        sound: "צליל",
+        soundToggle: "אודיו",
+        visuals: "רקע",
+        visualsToggle: "דינמי",
+        settings: "הגדרות",
+        save: "שמור",
+        settingsSaved: "נשמר",
+        settingsReset: "שוחזר",
+        play: "הפעל",
+        pause: "עצור",
+        reset: "איפוס",
+        done: "סיום",
+        inhale: "שאיפה",
+        hold1: "החזקה",
+        exhale: "נשיפה",
+        hold2: "החזקה",
+        coherence: "קוהרנטיות",
+        relax: "רוגע ומיקוד",
+        tranquility: "שלווה",
+        childFlow: "ילדים",
+        coherenceHint: "קבוע פנימה והחוצה",
+        relaxHint: "נשימת קופסה",
+        tranquilityHint: "4 - 7 - 8",
+        childFlowHint: "3 - 1 - 5",
+        hintAdult: "לאט ובקצב קבוע.",
+        hintChild: "נושמים עם האור.",
+        sceneAurora: "זוהר",
+        sceneDusk: "דמדומים",
+        sceneForest: "יער",
+        sceneSky: "שמיים",
+        sceneBubbles: "בועות",
+        sceneStars: "כוכבים",
+        scenePurpleStars: "כוכבים סגולים",
+        guidance: "הכוונה",
+        adultGuidance: "מבוגרים",
+        childGuidance: "ילדים",
+        guideCoherence: "קוהרנטיות: ערנות רגועה.",
+        guideRelax: "רוגע ומיקוד: מרגיע גוף וממקד מחשבה.",
+        guideTranquility: "שלווה: מוריד מתח ומכין לשינה.",
+        guideChildIntro: "3-1-5: מריחים פרח, מחזיקים רגע, ונושפים לאט.",
+        guideChildWhy: "קצב קצר, פשוט ומשחקי לילדים קטנים.",
+        audioOff: "רק רמזים",
+        audioOffHint: "רק צלילי רמז",
+        audioCalm: "6 הרץ רגוע",
+        audioCalmHint: "דרון בינאורלי",
+        audioFocus: "8 הרץ מיקוד",
+        audioFocusHint: "דרון צלול",
+        audioDrift: "טנפורה",
+        audioDriftHint: "דרון חם",
+        audioSparkle: "פעמונים רכים",
+        audioSparkleHint: "מנגינה עדינה",
+        audioDream: "פד חם",
+        audioDreamHint: "מרקם רך",
+        minutesShort: "דק'"
+      }
+    };
+
+    const durations = [1, 3, 5, 10];
+    const catalog = {
+      adult: {
+        modes: [
+          {
+            id: "coherence",
+            titleKey: "coherence",
+            hintKey: "coherenceHint",
+            fields: ["inhale", "exhale"],
+            presets: [
+              { id: "coh-66", label: "6 - 6", phases: { inhale: 6, hold1: 0, exhale: 6, hold2: 0 } },
+              { id: "coh-55", label: "5 - 5", phases: { inhale: 5, hold1: 0, exhale: 5, hold2: 0 } },
+              { id: "coh-46", label: "4 - 6", phases: { inhale: 4, hold1: 0, exhale: 6, hold2: 0 } }
+            ]
+          },
+          {
+            id: "relax",
+            titleKey: "relax",
+            hintKey: "relaxHint",
+            fields: ["inhale", "hold1", "exhale", "hold2"],
+            presets: [
+              { id: "box-3333", label: "3 - 3 - 3 - 3", phases: { inhale: 3, hold1: 3, exhale: 3, hold2: 3 } },
+              { id: "box-4444", label: "4 - 4 - 4 - 4", phases: { inhale: 4, hold1: 4, exhale: 4, hold2: 4 } }
+            ]
+          },
+          {
+            id: "tranquility",
+            titleKey: "tranquility",
+            hintKey: "tranquilityHint",
+            fields: ["inhale", "hold1", "exhale"],
+            presets: [
+              { id: "tran-478", label: "4 - 7 - 8", phases: { inhale: 4, hold1: 7, exhale: 8, hold2: 0 } }
+            ]
+          }
+        ],
+        scenes: [
+          { id: "aurora", labelKey: "sceneAurora" },
+          { id: "bubbles", labelKey: "sceneBubbles" },
+          { id: "stars", labelKey: "sceneStars" },
+          { id: "purpleStars", labelKey: "scenePurpleStars" },
+          { id: "sky", labelKey: "sceneSky" }
+        ],
+        sounds: [
+          { id: "off", labelKey: "audioOff", hintKey: "audioOffHint" },
+          { id: "sparkle", labelKey: "audioSparkle", hintKey: "audioSparkleHint" },
+          { id: "dream", labelKey: "audioDream", hintKey: "audioDreamHint" },
+        ],
+        defaultScene: "aurora",
+        defaultSound: "dream"
+      },
+      child: {
+        modes: [
+          {
+            id: "childFlow",
+            titleKey: "childFlow",
+            hintKey: "childFlowHint",
+            fields: ["inhale", "hold1", "exhale"],
+            presets: [
+              { id: "kid-315", label: "3 - 1 - 5", phases: { inhale: 3, hold1: 1, exhale: 5, hold2: 0 } },
+              { id: "kid-416", label: "4 - 1 - 6", phases: { inhale: 4, hold1: 1, exhale: 6, hold2: 0 } }
+            ]
+          }
+        ],
+        scenes: [
+          { id: "aurora", labelKey: "sceneAurora" },
+          { id: "bubbles", labelKey: "sceneBubbles" },
+          { id: "stars", labelKey: "sceneStars" },
+          { id: "purpleStars", labelKey: "scenePurpleStars" },
+          { id: "sky", labelKey: "sceneSky" }
+        ],
+        sounds: [
+          { id: "off", labelKey: "audioOff", hintKey: "audioOffHint" },
+          { id: "sparkle", labelKey: "audioSparkle", hintKey: "audioSparkleHint" },
+          { id: "dream", labelKey: "audioDream", hintKey: "audioDreamHint" },
+        ],
+        defaultScene: "sky",
+        defaultSound: "sparkle"
+      }
+    };
+
+    const settingsStorageKey = "respiration-app-settings-heb-v1";
+
+    function createInitialModeState() {
+      const modeState = {};
+      for (const audience of Object.keys(catalog)) {
+        for (const mode of catalog[audience].modes) {
+          modeState[`${audience}:${mode.id}`] = {
+            presetId: mode.presets[0].id,
+            phases: { ...mode.presets[0].phases }
+          };
+        }
+      }
+      return modeState;
+    }
+
+    function createDefaultState() {
+      return {
+        language: "he",
+        audience: "adult",
+        mode: "coherence",
+        durationMinutes: 3,
+        visualsOn: true,
+        audioOn: false,
+        sessionElapsedMs: 0,
+        running: false,
+        rafId: null,
+        startStamp: 0,
+        lastPhaseId: "",
+        completed: false,
+        sceneByAudience: {
+          adult: catalog.adult.defaultScene,
+          child: catalog.child.defaultScene
+        },
+        soundByAudience: {
+          adult: catalog.adult.defaultSound,
+          child: catalog.child.defaultSound
+        },
+        modeState: createInitialModeState()
+      };
+    }
+
+    const defaultState = createDefaultState();
+    const state = createDefaultState();
+    let settingsStatusKey = "";
+
+    const elements = {
+      body: document.body,
+      languageSwitch: document.getElementById("languageSwitch"),
+      audienceSwitch: document.getElementById("audienceSwitch"),
+      modeGrid: document.getElementById("modeGrid"),
+      presetGrid: document.getElementById("presetGrid"),
+      phaseGrid: document.getElementById("phaseGrid"),
+      durationGrid: document.getElementById("durationGrid"),
+      customMinutes: document.getElementById("customMinutes"),
+      soundGrid: document.getElementById("soundGrid"),
+      sceneGrid: document.getElementById("sceneGrid"),
+      audioToggle: document.getElementById("audioToggle"),
+      visualsToggle: document.getElementById("visualsToggle"),
+      patternSummary: document.getElementById("patternSummary"),
+      sessionSummary: document.getElementById("sessionSummary"),
+      orbitDots: document.getElementById("orbitDots"),
+      countValue: document.getElementById("countValue"),
+      phaseName: document.getElementById("phaseName"),
+      timeLeft: document.getElementById("timeLeft"),
+      cyclePill: document.getElementById("cyclePill"),
+      playButton: document.getElementById("playButton"),
+      pauseButton: document.getElementById("pauseButton"),
+      resetButton: document.getElementById("resetButton"),
+      sessionFill: document.getElementById("sessionFill"),
+      hintLine: document.getElementById("hintLine"),
+      saveSettingsButton: document.getElementById("saveSettingsButton"),
+      resetSavedButton: document.getElementById("resetSavedButton"),
+      settingsStatus: document.getElementById("settingsStatus")
+    };
+
+    class AudioEngine {
+      constructor() {
+        this.context = null;
+        this.master = null;
+        this.compressor = null;
+        this.reverb = null;
+        this.reverbGain = null;
+        this.noiseBuffer = null;
+        this.profile = null;
+      }
+
+      async ensureContext() {
+        if (!this.context) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContextClass) {
+            return false;
+          }
+
+          this.context = new AudioContextClass();
+          this.master = this.context.createGain();
+          this.master.gain.value = 0.0001;
+          this.compressor = this.context.createDynamicsCompressor();
+          this.compressor.threshold.value = -26;
+          this.compressor.knee.value = 12;
+          this.compressor.ratio.value = 3;
+          this.compressor.attack.value = 0.03;
+          this.compressor.release.value = 0.2;
+          this.reverb = this.context.createConvolver();
+          this.reverb.buffer = this.createImpulseResponse();
+          this.reverbGain = this.context.createGain();
+          this.reverbGain.gain.value = 0.38;
+          this.reverb.connect(this.reverbGain);
+          this.reverbGain.connect(this.master);
+          this.master.connect(this.compressor);
+          this.compressor.connect(this.context.destination);
+          this.noiseBuffer = this.createNoiseBuffer();
+        }
+
+        if (this.context.state === "suspended") {
+          await this.context.resume();
+        }
+
+        return true;
+      }
+
+      createImpulseResponse(seconds = 2.6, decay = 2.2) {
+        const length = Math.floor(this.context.sampleRate * seconds);
+        const impulse = this.context.createBuffer(2, length, this.context.sampleRate);
+
+        for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+          const data = impulse.getChannelData(channel);
+          for (let index = 0; index < length; index += 1) {
+            const envelope = Math.pow(1 - index / length, decay);
+            data[index] = (Math.random() * 2 - 1) * envelope;
+          }
+        }
+
+        return impulse;
+      }
+
+      createNoiseBuffer() {
+        const length = this.context.sampleRate * 2;
+        const buffer = this.context.createBuffer(2, length, this.context.sampleRate);
+
+        for (let channel = 0; channel < buffer.numberOfChannels; channel += 1) {
+          const data = buffer.getChannelData(channel);
+          let last = 0;
+          for (let index = 0; index < length; index += 1) {
+            const white = Math.random() * 2 - 1;
+            last = (last + 0.035 * white) / 1.035;
+            data[index] = last * 3.5;
+          }
+        }
+
+        return buffer;
+      }
+
+      createPanNode(pan) {
+        if (typeof this.context.createStereoPanner === "function") {
+          const node = this.context.createStereoPanner();
+          node.pan.value = pan;
+          return node;
+        }
+
+        return this.context.createGain();
+      }
+
+      stopNode(node, when = 0) {
+        if (node && typeof node.stop === "function") {
+          try {
+            node.stop(when);
+          } catch (error) {
+          }
+        }
+      }
+
+      clearTimers(profile = this.profile) {
+        if (!profile) {
+          return;
+        }
+
+        profile.timers.forEach((timer) => clearInterval(timer));
+        profile.timers = [];
+      }
+
+      stopProfile(fade = 0.24) {
+        if (!this.profile || !this.context) {
+          return;
+        }
+
+        const profile = this.profile;
+        const when = this.context.currentTime;
+        this.clearTimers(profile);
+        profile.breath.gain.cancelScheduledValues(when);
+        profile.breath.gain.setTargetAtTime(0.0001, when, fade / 2);
+        profile.output.gain.cancelScheduledValues(when);
+        profile.output.gain.setTargetAtTime(0.0001, when, fade / 2);
+        profile.send.gain.cancelScheduledValues(when);
+        profile.send.gain.setTargetAtTime(0.0001, when, fade / 2);
+        [...profile.oscillators, ...profile.noises, ...profile.lfos].forEach((node) => this.stopNode(node, when + fade + 0.08));
+        this.profile = null;
+      }
+
+      createProfile() {
+        const profile = {
+          audience: state.audience,
+          soundId: "off",
+          output: this.context.createGain(),
+          send: this.context.createGain(),
+          breath: this.context.createGain(),
+          oscillators: [],
+          noises: [],
+          lfos: [],
+          filters: [],
+          timers: []
+        };
+
+        profile.output.gain.value = 0.0001;
+        profile.send.gain.value = 0.0001;
+        profile.breath.gain.value = 0.9;
+        profile.breath.connect(profile.output);
+        profile.output.connect(this.master);
+        profile.send.connect(this.reverb);
+        return profile;
+      }
+
+      registerLfo(profile, target, rate, depth) {
+        const lfo = this.context.createOscillator();
+        const gain = this.context.createGain();
+        lfo.type = "sine";
+        lfo.frequency.value = rate;
+        gain.gain.value = depth;
+        lfo.connect(gain);
+        gain.connect(target);
+        lfo.start();
+        profile.lfos.push(lfo);
+      }
+
+      createVoice(profile, options) {
+        const {
+          freq,
+          type = "sine",
+          gain = 0.16,
+          pan = 0,
+          filter = 900,
+          q = 0.3,
+          reverb = 0.22,
+          detune = 0,
+          lfoRate = 0,
+          lfoDepth = 0
+        } = options;
+
+        const osc = this.context.createOscillator();
+        const filterNode = this.context.createBiquadFilter();
+        const panNode = this.createPanNode(pan);
+        const amp = this.context.createGain();
+        const wet = this.context.createGain();
+
+        osc.type = type;
+        osc.frequency.value = freq;
+        osc.detune.value = detune;
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = filter;
+        filterNode.Q.value = q;
+        amp.gain.value = gain;
+        wet.gain.value = reverb;
+
+        osc.connect(filterNode);
+        filterNode.connect(panNode);
+        panNode.connect(amp);
+        amp.connect(profile.breath);
+        amp.connect(wet);
+        wet.connect(profile.send);
+        osc.start();
+
+        profile.oscillators.push(osc);
+        profile.filters.push(filterNode);
+
+        if (lfoRate && lfoDepth) {
+          this.registerLfo(profile, amp.gain, lfoRate, lfoDepth);
+        }
+      }
+
+      createNoise(profile, options = {}) {
+        const {
+          gain = 0.012,
+          filter = 700,
+          reverb = 0.05
+        } = options;
+
+        const source = this.context.createBufferSource();
+        const filterNode = this.context.createBiquadFilter();
+        const amp = this.context.createGain();
+        const wet = this.context.createGain();
+
+        source.buffer = this.noiseBuffer;
+        source.loop = true;
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = filter;
+        amp.gain.value = gain;
+        wet.gain.value = reverb;
+
+        source.connect(filterNode);
+        filterNode.connect(amp);
+        amp.connect(profile.breath);
+        amp.connect(wet);
+        wet.connect(profile.send);
+        source.start();
+
+        profile.noises.push(source);
+        profile.filters.push(filterNode);
+      }
+
+      playBell(frequency, volume = 0.018, duration = 1.5, pan = 0, bright = false) {
+        if (!this.context) {
+          return;
+        }
+
+        const now = this.context.currentTime;
+        const oscA = this.context.createOscillator();
+        const oscB = this.context.createOscillator();
+        const filterNode = this.context.createBiquadFilter();
+        const panNode = this.createPanNode(pan);
+        const amp = this.context.createGain();
+        const wet = this.context.createGain();
+
+        oscA.type = bright ? "triangle" : "sine";
+        oscB.type = "sine";
+        oscA.frequency.setValueAtTime(frequency, now);
+        oscB.frequency.setValueAtTime(frequency * 2.01, now);
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = bright ? 2800 : 1900;
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.exponentialRampToValueAtTime(volume, now + 0.03);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        wet.gain.value = bright ? 0.35 : 0.24;
+
+        oscA.connect(filterNode);
+        oscB.connect(filterNode);
+        filterNode.connect(panNode);
+        panNode.connect(amp);
+        amp.connect(this.master);
+        amp.connect(wet);
+        wet.connect(this.reverb);
+
+        oscA.start(now);
+        oscB.start(now);
+        oscA.stop(now + duration + 0.06);
+        oscB.stop(now + duration + 0.06);
+      }
+
+      playCueTone(frequency, options = {}) {
+        if (!this.context) {
+          return;
+        }
+
+        const {
+          volume = 0.014,
+          duration = 0.24,
+          pan = 0,
+          whenOffset = 0,
+          bright = true,
+          reverb = 0.14
+        } = options;
+        const now = this.context.currentTime + whenOffset;
+        const oscA = this.context.createOscillator();
+        const oscB = this.context.createOscillator();
+        const filterNode = this.context.createBiquadFilter();
+        const panNode = this.createPanNode(pan);
+        const amp = this.context.createGain();
+        const wet = this.context.createGain();
+
+        oscA.type = bright ? "triangle" : "sine";
+        oscB.type = "sine";
+        oscA.frequency.setValueAtTime(frequency, now);
+        oscB.frequency.setValueAtTime(frequency * 1.5, now);
+        filterNode.type = "lowpass";
+        filterNode.frequency.value = bright ? 3200 : 2200;
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(volume, now + 0.018);
+        amp.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        wet.gain.value = reverb;
+
+        oscA.connect(filterNode);
+        oscB.connect(filterNode);
+        filterNode.connect(panNode);
+        panNode.connect(amp);
+        amp.connect(this.master);
+        amp.connect(wet);
+        wet.connect(this.reverb);
+
+        oscA.start(now);
+        oscB.start(now);
+        oscA.stop(now + duration + 0.04);
+        oscB.stop(now + duration + 0.04);
+      }
+
+      playPhaseCuePattern(soundId, phaseId) {
+        const cueOnly = soundId === "off";
+        const baseVolume = cueOnly ? 0.015 : 0.012;
+        const reverb = cueOnly ? 0.08 : 0.14;
+
+        if (phaseId === "inhale") {
+          this.playCueTone(659.25, { volume: baseVolume, duration: 0.2, pan: -0.08, whenOffset: 0, bright: true, reverb });
+          this.playCueTone(783.99, { volume: baseVolume * 0.94, duration: 0.18, pan: 0.08, whenOffset: 0.2, bright: true, reverb });
+          return;
+        }
+
+        if (phaseId === "exhale") {
+          this.playCueTone(440, { volume: baseVolume * 1.05, duration: 0.28, pan: 0, whenOffset: 0, bright: false, reverb: Math.max(0.06, reverb - 0.04) });
+          return;
+        }
+
+        if (phaseId === "hold1" || phaseId === "hold2") {
+          this.playCueTone(587.33, { volume: baseVolume * 0.95, duration: 0.34, pan: 0, whenOffset: 0, bright: true, reverb });
+          this.playCueTone(493.88, { volume: baseVolume * 0.55, duration: 0.3, pan: 0, whenOffset: 0.12, bright: false, reverb: Math.max(0.05, reverb - 0.03) });
+        }
+      }
+
+      scheduleNotes(profile, notes, intervalMs, volume, bright = false) {
+        const pans = [-0.18, 0, 0.18];
+        let index = 0;
+
+        const play = () => {
+          if (!this.profile || this.profile !== profile) {
+            return;
+          }
+
+          this.playBell(notes[index % notes.length], volume, bright ? 1.4 : 1.8, pans[index % pans.length], bright);
+          index += 1;
+        };
+
+        play();
+        const timer = setInterval(play, intervalMs);
+        profile.timers.push(timer);
+      }
+
+      applyPhaseShape(phaseId) {
+        if (!this.profile || !this.context) {
+          return;
+        }
+
+        const targets = {
+          inhale: { cutoff: 1600, gain: 1.02 },
+          hold1: { cutoff: 1080, gain: 0.92 },
+          exhale: { cutoff: 720, gain: 0.78 },
+          hold2: { cutoff: 560, gain: 0.72 }
+        }[phaseId] || { cutoff: 1000, gain: 0.88 };
+        const now = this.context.currentTime;
+
+        this.profile.breath.gain.cancelScheduledValues(now);
+        this.profile.breath.gain.setTargetAtTime(targets.gain, now, 0.16);
+        this.profile.filters.forEach((filterNode, index) => {
+          filterNode.frequency.cancelScheduledValues(now);
+          filterNode.frequency.setTargetAtTime(targets.cutoff + index * 65, now, 0.18);
+        });
+      }
+
+      startProfile(soundId) {
+        this.stopProfile();
+        const profile = this.createProfile();
+        const now = this.context.currentTime;
+        let outputLevel = 0.64;
+        let reverbLevel = 0.28;
+
+        profile.soundId = soundId;
+        this.profile = profile;
+
+        switch (soundId) {
+          case "calm":
+            this.createVoice(profile, { freq: 196, type: "sine", gain: 0.18, pan: -0.48, filter: 1050, reverb: 0.28 });
+            this.createVoice(profile, { freq: 202, type: "sine", gain: 0.18, pan: 0.48, filter: 1050, reverb: 0.28 });
+            this.createVoice(profile, { freq: 98, type: "triangle", gain: 0.05, pan: -0.12, filter: 420, reverb: 0.08, lfoRate: 0.07, lfoDepth: 0.01 });
+            this.createVoice(profile, { freq: 147, type: "sine", gain: 0.04, pan: 0.12, filter: 720, reverb: 0.18 });
+            this.createNoise(profile, { gain: 0.012, filter: 520, reverb: 0.05 });
+            outputLevel = 0.7;
+            reverbLevel = 0.32;
+            break;
+          case "focus":
+            this.createVoice(profile, { freq: 208, type: "triangle", gain: 0.15, pan: -0.45, filter: 1220, reverb: 0.22 });
+            this.createVoice(profile, { freq: 216, type: "triangle", gain: 0.15, pan: 0.45, filter: 1220, reverb: 0.22 });
+            this.createVoice(profile, { freq: 156, type: "sine", gain: 0.05, pan: -0.1, filter: 650, reverb: 0.12 });
+            this.createVoice(profile, { freq: 312, type: "sine", gain: 0.03, pan: 0.1, filter: 1450, reverb: 0.18, lfoRate: 0.11, lfoDepth: 0.008 });
+            this.createNoise(profile, { gain: 0.008, filter: 900, reverb: 0.03 });
+            outputLevel = 0.74;
+            reverbLevel = 0.24;
+            break;
+          case "drift":
+            this.createVoice(profile, { freq: 136.1, type: "sine", gain: 0.18, pan: -0.45, filter: 920, reverb: 0.34 });
+            this.createVoice(profile, { freq: 140.1, type: "sine", gain: 0.18, pan: 0.45, filter: 920, reverb: 0.34 });
+            this.createVoice(profile, { freq: 204.15, type: "sine", gain: 0.05, pan: -0.08, filter: 740, reverb: 0.22 });
+            this.createVoice(profile, { freq: 272.2, type: "triangle", gain: 0.028, pan: 0.08, filter: 1120, reverb: 0.28, lfoRate: 0.05, lfoDepth: 0.006 });
+            this.createNoise(profile, { gain: 0.014, filter: 430, reverb: 0.08 });
+            outputLevel = 0.72;
+            reverbLevel = 0.4;
+            break;
+          case "sparkle":
+            this.createVoice(profile, { freq: 261.63, type: "sine", gain: 0.08, pan: -0.3, filter: 1650, reverb: 0.25 });
+            this.createVoice(profile, { freq: 329.63, type: "triangle", gain: 0.06, pan: 0.3, filter: 1850, reverb: 0.3 });
+            this.createVoice(profile, { freq: 196, type: "sine", gain: 0.03, pan: 0, filter: 820, reverb: 0.12 });
+            outputLevel = 0.5;
+            reverbLevel = 0.28;
+            break;
+          case "dream":
+            this.createVoice(profile, { freq: 220, type: "sine", gain: 0.08, pan: -0.25, filter: 1450, reverb: 0.3 });
+            this.createVoice(profile, { freq: 294.33, type: "triangle", gain: 0.055, pan: 0.25, filter: 1650, reverb: 0.34 });
+            this.createVoice(profile, { freq: 392, type: "sine", gain: 0.024, pan: 0, filter: 1200, reverb: 0.2, lfoRate: 0.08, lfoDepth: 0.005 });
+            outputLevel = 0.46;
+            reverbLevel = 0.34;
+            break;
+          default:
+            break;
+        }
+
+        profile.output.gain.linearRampToValueAtTime(outputLevel, now + 0.35);
+        profile.send.gain.linearRampToValueAtTime(reverbLevel, now + 0.35);
+        this.applyPhaseShape("inhale");
+      }
+
+      async phaseCue(audience, soundId, phaseId) {
+        const cueOnly = soundId === "off";
+        if (!this.profile && !cueOnly) {
+          return;
+        }
+
+        if (!cueOnly) {
+          this.applyPhaseShape(phaseId);
+        }
+
+        if (phaseId !== "inhale" && phaseId !== "exhale" && phaseId !== "hold1" && phaseId !== "hold2") {
+          return;
+        }
+
+        this.playPhaseCuePattern(soundId, phaseId);
+      }
+
+      async completeCue() {
+        const ok = await this.ensureContext();
+        if (!ok) {
+          return;
+        }
+
+        [523.25, 659.25, 783.99].forEach((note, index) => {
+          window.setTimeout(() => {
+            this.playBell(note, 0.012 + index * 0.003, 1.6, index === 1 ? 0 : index === 0 ? -0.12 : 0.12, true);
+          }, index * 130);
+        });
+      }
+
+      async syncWithState() {
+        const ok = await this.ensureContext();
+        if (!ok) {
+          return;
+        }
+
+        if (!state.audioOn || !state.running) {
+          const now = this.context.currentTime;
+          this.master.gain.cancelScheduledValues(now);
+          this.master.gain.linearRampToValueAtTime(0.0001, now + 0.18);
+          this.stopProfile();
+          return;
+        }
+
+        const soundId = state.soundByAudience[state.audience];
+        const now = this.context.currentTime;
+        if (soundId === "off") {
+          this.master.gain.cancelScheduledValues(now);
+          this.master.gain.linearRampToValueAtTime(1, now + 0.18);
+          this.stopProfile();
+          return;
+        }
+        this.master.gain.cancelScheduledValues(now);
+        this.master.gain.linearRampToValueAtTime(1, now + 0.24);
+
+        if (!this.profile || this.profile.soundId !== soundId || this.profile.audience !== state.audience) {
+          this.startProfile(soundId);
+        }
+      }
+    }
+
+    const audioEngine = new AudioEngine();
+    function translate(key) {
+      return translations[state.language][key] || translations.en[key] || key;
+    }
+
+    function getCurrentCatalog() {
+      return catalog[state.audience];
+    }
+
+    function getCurrentMode() {
+      return getCurrentCatalog().modes.find((mode) => mode.id === state.mode) || getCurrentCatalog().modes[0];
+    }
+
+    function getModeState(modeId = state.mode, audience = state.audience) {
+      return state.modeState[`${audience}:${modeId}`];
+    }
+
+    function clonePhases(phases) {
+      return {
+        inhale: Number(phases.inhale) || 0,
+        hold1: Number(phases.hold1) || 0,
+        exhale: Number(phases.exhale) || 0,
+        hold2: Number(phases.hold2) || 0
+      };
+    }
+
+    function copyModeState(modeState) {
+      return Object.fromEntries(
+        Object.entries(modeState).map(([key, value]) => [
+          key,
+          {
+            presetId: value.presetId,
+            phases: clonePhases(value.phases)
+          }
+        ])
+      );
+    }
+
+    function hasCatalogOption(audience, section, id) {
+      return catalog[audience][section].some((item) => item.id === id);
+    }
+
+    function getCatalogMode(audience, modeId) {
+      return catalog[audience].modes.find((mode) => mode.id === modeId);
+    }
+
+    function getMatchingPresetId(mode, phases) {
+      const match = mode.presets.find((preset) =>
+        ["inhale", "hold1", "exhale", "hold2"].every((phase) =>
+          Number(preset.phases[phase] || 0) === Number(phases[phase] || 0)
+        )
+      );
+      return match ? match.id : "custom";
+    }
+
+    function createSettingsSnapshot(source = state) {
+      return {
+        language: source.language,
+        audience: source.audience,
+        mode: source.mode,
+        durationMinutes: source.durationMinutes,
+        visualsOn: source.visualsOn,
+        audioOn: source.audioOn,
+        sceneByAudience: { ...source.sceneByAudience },
+        soundByAudience: { ...source.soundByAudience },
+        modeState: copyModeState(source.modeState)
+      };
+    }
+
+    function applySettingsSnapshot(raw = defaultState) {
+      const next = createSettingsSnapshot(defaultState);
+
+      if (raw && typeof raw === "object") {
+        next.language = raw.language === "he" ? "he" : "en";
+        next.audience = raw.audience === "child" ? "child" : "adult";
+
+        const minutes = Number(raw.durationMinutes);
+        if (Number.isFinite(minutes)) {
+          next.durationMinutes = Math.min(30, Math.max(1, Math.round(minutes)));
+        }
+
+        if (typeof raw.visualsOn === "boolean") {
+          next.visualsOn = raw.visualsOn;
+        }
+        if (typeof raw.audioOn === "boolean") {
+          next.audioOn = raw.audioOn;
+        }
+
+        for (const audience of Object.keys(catalog)) {
+          const sceneId = raw.sceneByAudience?.[audience];
+          const soundId = raw.soundByAudience?.[audience];
+          if (hasCatalogOption(audience, "scenes", sceneId)) {
+            next.sceneByAudience[audience] = sceneId;
+          }
+          if (hasCatalogOption(audience, "sounds", soundId)) {
+            next.soundByAudience[audience] = soundId;
+          }
+
+          for (const mode of catalog[audience].modes) {
+            const key = `${audience}:${mode.id}`;
+            const savedMode = raw.modeState?.[key];
+            if (!savedMode || typeof savedMode !== "object") {
+              continue;
+            }
+
+            const phases = clonePhases(next.modeState[key].phases);
+            ["inhale", "hold1", "exhale", "hold2"].forEach((phase) => {
+              phases[phase] = mode.fields.includes(phase)
+                ? sanitizePhaseValue(phase, savedMode.phases?.[phase] ?? phases[phase])
+                : 0;
+            });
+
+            next.modeState[key] = {
+              presetId: getMatchingPresetId(mode, phases),
+              phases
+            };
+          }
+        }
+
+        next.mode = getCatalogMode(next.audience, raw.mode)?.id || catalog[next.audience].modes[0].id;
+      }
+
+      state.language = next.language;
+      state.audience = next.audience;
+      state.mode = next.mode;
+      state.durationMinutes = next.durationMinutes;
+      state.visualsOn = next.visualsOn;
+      state.audioOn = next.audioOn;
+      state.sceneByAudience = { ...next.sceneByAudience };
+      state.soundByAudience = { ...next.soundByAudience };
+      state.modeState = copyModeState(next.modeState);
+    }
+
+    function loadSavedSettings() {
+      try {
+        const saved = window.localStorage.getItem(settingsStorageKey);
+        if (!saved) {
+          return;
+        }
+        applySettingsSnapshot(JSON.parse(saved));
+      } catch (error) {
+      }
+    }
+
+    function updateSettingsStatus() {
+      elements.settingsStatus.textContent = settingsStatusKey ? translate(settingsStatusKey) : "";
+    }
+
+    function saveCurrentSettings() {
+      try {
+        window.localStorage.setItem(settingsStorageKey, JSON.stringify(createSettingsSnapshot()));
+      } catch (error) {
+      }
+      settingsStatusKey = "settingsSaved";
+      updateSettingsStatus();
+    }
+
+    function resetSavedSettings() {
+      try {
+        window.localStorage.removeItem(settingsStorageKey);
+      } catch (error) {
+      }
+      settingsStatusKey = "settingsReset";
+      applySettingsSnapshot(defaultState);
+      resetSession();
+      renderAll();
+    }
+
+    function getActivePhaseList(mode = getCurrentMode(), phases = getModeState().phases) {
+      return mode.fields
+        .filter((phase) => Number(phases[phase]) > 0)
+        .map((phase) => ({ id: phase, seconds: Number(phases[phase]) }));
+    }
+
+    function getPatternSummary(phases = getModeState().phases, mode = getCurrentMode()) {
+      return getActivePhaseList(mode, phases).map((phase) => phase.seconds).join(" - ");
+    }
+
+    function formatTime(totalSeconds) {
+      const safe = Math.max(0, Math.floor(totalSeconds));
+      const minutes = String(Math.floor(safe / 60)).padStart(2, "0");
+      const seconds = String(safe % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    }
+
+    function formatMinutes(minutes) {
+      return `${minutes} ${translate("minutesShort")}`;
+    }
+
+    function applyStaticTranslations() {
+      document.documentElement.lang = state.language;
+      document.documentElement.dir = state.language === "he" ? "rtl" : "ltr";
+      elements.body.dir = state.language === "he" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        node.textContent = translate(node.dataset.i18n);
+      });
+
+      elements.languageSwitch.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.language === state.language);
+      });
+
+      elements.audienceSwitch.querySelectorAll("button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.audienceOption === state.audience);
+      });
+    }
+
+    function buildOrbitDots() {
+      elements.orbitDots.innerHTML = "";
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (Math.PI * 2 * index) / 12 - Math.PI / 2;
+        const dot = document.createElement("span");
+        const radius = 46;
+        dot.style.left = `${50 + Math.cos(angle) * radius}%`;
+        dot.style.top = `${50 + Math.sin(angle) * radius}%`;
+        elements.orbitDots.appendChild(dot);
+      }
+    }
+
+    function renderModeButtons() {
+      elements.modeGrid.innerHTML = "";
+
+      getCurrentCatalog().modes.forEach((mode) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "mode-button";
+        button.classList.toggle("active", mode.id === state.mode);
+        button.innerHTML = `<strong>${translate(mode.titleKey)}</strong><span>${translate(mode.hintKey)}</span>`;
+        button.addEventListener("click", () => {
+          if (state.mode === mode.id) {
+            return;
+          }
+
+          state.mode = mode.id;
+          resetSession();
+          renderAll();
+        });
+        elements.modeGrid.appendChild(button);
+      });
+    }
+
+    function renderPresetButtons() {
+      const mode = getCurrentMode();
+      const modeState = getModeState();
+      elements.presetGrid.innerHTML = "";
+
+      mode.presets.forEach((preset) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "preset-button";
+        button.classList.toggle("active", preset.id === modeState.presetId);
+        button.innerHTML = `<strong>${preset.label}</strong><span>${translate(mode.hintKey)}</span>`;
+        button.addEventListener("click", () => {
+          modeState.presetId = preset.id;
+          modeState.phases = clonePhases(preset.phases);
+          resetSession();
+          renderAll();
+        });
+        elements.presetGrid.appendChild(button);
+      });
+    }
+
+    function sanitizePhaseValue(phase, value) {
+      const numeric = Number(value);
+      if (!Number.isFinite(numeric)) {
+        return phase === "inhale" || phase === "exhale" ? 1 : 0;
+      }
+
+      const min = phase === "inhale" || phase === "exhale" ? 1 : 0;
+      const max = phase === "exhale" ? 20 : 15;
+      return Math.min(max, Math.max(min, Math.round(numeric)));
+    }
+
+    function renderPhaseFields() {
+      const mode = getCurrentMode();
+      const modeState = getModeState();
+      elements.phaseGrid.innerHTML = "";
+
+      mode.fields.forEach((phase) => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "phase-field";
+        wrapper.innerHTML = `
+          <label for="phase-${phase}">${translate(phase)}</label>
+          <input id="phase-${phase}" type="number" min="${phase === "inhale" || phase === "exhale" ? 1 : 0}" max="${phase === "exhale" ? 20 : 15}" step="1" value="${modeState.phases[phase]}">
+        `;
+
+        const input = wrapper.querySelector("input");
+        input.addEventListener("input", () => {
+          modeState.phases[phase] = sanitizePhaseValue(phase, input.value);
+          input.value = modeState.phases[phase];
+          modeState.presetId = "custom";
+          resetSession();
+          renderReadouts();
+          renderPresetButtons();
+        });
+
+        elements.phaseGrid.appendChild(wrapper);
+      });
+    }
+
+    function renderDurationButtons() {
+      elements.durationGrid.innerHTML = "";
+
+      durations.forEach((minutes) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip";
+        button.textContent = formatMinutes(minutes);
+        button.classList.toggle("active", state.durationMinutes === minutes);
+        button.addEventListener("click", () => {
+          state.durationMinutes = minutes;
+          elements.customMinutes.value = minutes;
+          resetSession();
+          renderReadouts();
+          renderDurationButtons();
+        });
+        elements.durationGrid.appendChild(button);
+      });
+    }
+
+    function renderSoundButtons() {
+      elements.soundGrid.innerHTML = "";
+
+      getCurrentCatalog().sounds.forEach((sound) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "icon-chip";
+        button.classList.toggle("active", state.soundByAudience[state.audience] === sound.id);
+        button.innerHTML = `<strong>${translate(sound.labelKey)}</strong><small>${translate(sound.hintKey)}</small>`;
+        button.addEventListener("click", async () => {
+          state.soundByAudience[state.audience] = sound.id;
+          renderSoundButtons();
+          if (state.running && state.audioOn) {
+            await audioEngine.syncWithState();
+          }
+        });
+        elements.soundGrid.appendChild(button);
+      });
+    }
+
+    function renderSceneButtons() {
+      elements.sceneGrid.innerHTML = "";
+
+      getCurrentCatalog().scenes.forEach((scene) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip";
+        button.textContent = translate(scene.labelKey);
+        button.classList.toggle("active", state.sceneByAudience[state.audience] === scene.id);
+        button.addEventListener("click", () => {
+          state.sceneByAudience[state.audience] = scene.id;
+          renderSceneButtons();
+          applyTheme();
+        });
+        elements.sceneGrid.appendChild(button);
+      });
+    }
+
+    function renderReadouts() {
+      const modeState = getModeState();
+      const patternText = getPatternSummary(modeState.phases);
+      elements.patternSummary.textContent = patternText;
+      elements.cyclePill.textContent = patternText;
+      elements.sessionSummary.textContent = formatMinutes(state.durationMinutes);
+      elements.customMinutes.value = state.durationMinutes;
+      elements.hintLine.textContent = translate(state.audience === "adult" ? "hintAdult" : "hintChild");
+      elements.timeLeft.textContent = formatTime(state.durationMinutes * 60 - state.sessionElapsedMs / 1000);
+      elements.audioToggle.checked = state.audioOn;
+      elements.visualsToggle.checked = state.visualsOn;
+    }
+
+    function applyTheme() {
+      elements.body.dataset.audience = state.audience;
+      elements.body.dataset.scene = state.sceneByAudience[state.audience];
+      elements.body.dataset.visuals = state.visualsOn ? "on" : "off";
+      elements.body.dataset.motion = state.visualsOn ? "on" : "off";
+    }
+    function getCycleMetrics(elapsedMs = state.sessionElapsedMs) {
+      const phaseList = getActivePhaseList();
+      const cycleLength = phaseList.reduce((sum, phase) => sum + phase.seconds, 0);
+
+      if (!cycleLength) {
+        return {
+          phaseList,
+          cycleLength: 1,
+          current: { id: "inhale", seconds: 1 },
+          phaseElapsed: 0,
+          phaseProgress: 0
+        };
+      }
+
+      let cursor = (elapsedMs / 1000) % cycleLength;
+
+      for (const phase of phaseList) {
+        if (cursor < phase.seconds) {
+          return {
+            phaseList,
+            cycleLength,
+            current: phase,
+            phaseElapsed: cursor,
+            phaseProgress: phase.seconds ? cursor / phase.seconds : 0
+          };
+        }
+        cursor -= phase.seconds;
+      }
+
+      return {
+        phaseList,
+        cycleLength,
+        current: phaseList[phaseList.length - 1],
+        phaseElapsed: 0,
+        phaseProgress: 0
+      };
+    }
+
+    function setOrbVisual(phaseId, progress) {
+      let scale = 0.74;
+      let glow = "rgba(140, 220, 201, 0.36)";
+      let fill = "linear-gradient(145deg, rgba(140, 220, 201, 0.32), rgba(118, 184, 255, 0.18))";
+
+      if (phaseId === "inhale") {
+        scale = 0.72 + progress * 0.28;
+        glow = "rgba(140, 220, 201, 0.42)";
+        fill = "linear-gradient(145deg, rgba(140, 220, 201, 0.38), rgba(118, 184, 255, 0.16))";
+      } else if (phaseId === "hold1") {
+        scale = 1;
+        glow = "rgba(238, 177, 109, 0.4)";
+        fill = "linear-gradient(145deg, rgba(238, 177, 109, 0.38), rgba(255, 255, 255, 0.12))";
+      } else if (phaseId === "exhale") {
+        scale = 1 - progress * 0.26;
+        glow = "rgba(255, 150, 122, 0.38)";
+        fill = "linear-gradient(145deg, rgba(255, 150, 122, 0.34), rgba(135, 196, 255, 0.14))";
+      } else if (phaseId === "hold2") {
+        scale = 0.74;
+        glow = "rgba(118, 184, 255, 0.36)";
+        fill = "linear-gradient(145deg, rgba(118, 184, 255, 0.28), rgba(255, 255, 255, 0.1))";
+      }
+
+      elements.body.style.setProperty("--orb-scale", scale.toFixed(3));
+      elements.body.style.setProperty("--phase-glow", glow);
+      elements.body.style.setProperty("--phase-fill", fill);
+    }
+
+    function updateOrbitDots(progress) {
+      const dots = [...elements.orbitDots.children];
+      const activeCount = Math.max(1, Math.ceil(progress * dots.length));
+      dots.forEach((dot, index) => {
+        dot.classList.toggle("active", index < activeCount);
+      });
+    }
+
+    function updateVisualState() {
+      if (state.completed) {
+        elements.countValue.textContent = "0";
+        elements.phaseName.textContent = translate("done");
+        elements.timeLeft.textContent = "00:00";
+        elements.sessionFill.style.width = "100%";
+        elements.body.style.setProperty("--phase-progress", "360deg");
+        setOrbVisual("hold1", 1);
+        updateOrbitDots(1);
+        return;
+      }
+
+      const totalSeconds = state.durationMinutes * 60;
+      const remainingSeconds = Math.max(0, totalSeconds - state.sessionElapsedMs / 1000);
+      const metrics = getCycleMetrics();
+      const secondsLeftInPhase = Math.max(1, Math.ceil(metrics.current.seconds - metrics.phaseElapsed));
+      const sessionProgress = totalSeconds ? (state.sessionElapsedMs / 1000) / totalSeconds : 0;
+
+      elements.countValue.textContent = String(secondsLeftInPhase);
+      elements.phaseName.textContent = translate(metrics.current.id);
+      elements.timeLeft.textContent = formatTime(remainingSeconds);
+      elements.sessionFill.style.width = `${Math.min(sessionProgress, 1) * 100}%`;
+      elements.body.style.setProperty("--phase-progress", `${Math.min(metrics.phaseProgress, 1) * 360}deg`);
+      setOrbVisual(metrics.current.id, metrics.phaseProgress);
+      updateOrbitDots(metrics.phaseProgress);
+    }
+
+    async function tick(frameTime) {
+      if (!state.running) {
+        return;
+      }
+
+      state.sessionElapsedMs = frameTime - state.startStamp;
+      const totalMs = state.durationMinutes * 60 * 1000;
+      const metrics = getCycleMetrics(state.sessionElapsedMs);
+
+      if (metrics.current.id !== state.lastPhaseId) {
+        state.lastPhaseId = metrics.current.id;
+        if (state.audioOn) {
+          await audioEngine.phaseCue(state.audience, state.soundByAudience[state.audience], metrics.current.id);
+        }
+      }
+
+      if (state.sessionElapsedMs >= totalMs) {
+        state.sessionElapsedMs = totalMs;
+        state.running = false;
+        state.completed = true;
+        elements.pauseButton.disabled = true;
+        await audioEngine.syncWithState();
+        if (state.audioOn) {
+          await audioEngine.completeCue();
+        }
+        updateVisualState();
+        return;
+      }
+
+      updateVisualState();
+      state.rafId = requestAnimationFrame(tick);
+    }
+
+    function stopAnimationFrame() {
+      if (state.rafId) {
+        cancelAnimationFrame(state.rafId);
+        state.rafId = null;
+      }
+    }
+
+    function resetSession() {
+      stopAnimationFrame();
+      state.running = false;
+      state.completed = false;
+      state.sessionElapsedMs = 0;
+      state.startStamp = 0;
+      state.lastPhaseId = "";
+      elements.pauseButton.disabled = true;
+      audioEngine.syncWithState();
+      updateVisualState();
+    }
+
+    async function startSession() {
+      if (state.completed) {
+        state.sessionElapsedMs = 0;
+        state.completed = false;
+      }
+
+      if (!state.running) {
+        const startingFresh = state.sessionElapsedMs === 0;
+        state.running = true;
+        state.startStamp = performance.now() - state.sessionElapsedMs;
+        elements.pauseButton.disabled = false;
+        if (state.audioOn) {
+          await audioEngine.syncWithState();
+        }
+        if (startingFresh) {
+          const metrics = getCycleMetrics(state.sessionElapsedMs);
+          state.lastPhaseId = metrics.current.id;
+          if (state.audioOn) {
+            await audioEngine.phaseCue(state.audience, state.soundByAudience[state.audience], metrics.current.id);
+          }
+        }
+        state.rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    async function pauseSession() {
+      if (!state.running) {
+        return;
+      }
+
+      stopAnimationFrame();
+      state.running = false;
+      elements.pauseButton.disabled = true;
+      await audioEngine.syncWithState();
+      updateVisualState();
+    }
+
+    function setAudience(audience) {
+      if (state.audience === audience) {
+        return;
+      }
+
+      state.audience = audience;
+      state.mode = getCurrentCatalog().modes[0].id;
+      resetSession();
+      renderAll();
+    }
+
+    function renderAll() {
+      applyStaticTranslations();
+      applyTheme();
+      renderModeButtons();
+      renderPresetButtons();
+      renderPhaseFields();
+      renderDurationButtons();
+      renderSoundButtons();
+      renderSceneButtons();
+      renderReadouts();
+      updateSettingsStatus();
+      updateVisualState();
+    }
+
+    elements.languageSwitch.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-language]");
+      if (!button) {
+        return;
+      }
+      state.language = button.dataset.language;
+      renderAll();
+    });
+
+    elements.audienceSwitch.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-audience-option]");
+      if (!button) {
+        return;
+      }
+      setAudience(button.dataset.audienceOption);
+    });
+
+    elements.customMinutes.addEventListener("input", () => {
+      const next = Math.min(30, Math.max(1, Math.round(Number(elements.customMinutes.value) || 1)));
+      state.durationMinutes = next;
+      elements.customMinutes.value = next;
+      resetSession();
+      renderReadouts();
+      renderDurationButtons();
+    });
+
+    elements.audioToggle.addEventListener("change", async () => {
+      state.audioOn = elements.audioToggle.checked;
+      await audioEngine.syncWithState();
+    });
+
+    elements.visualsToggle.addEventListener("change", () => {
+      state.visualsOn = elements.visualsToggle.checked;
+      applyTheme();
+    });
+
+    elements.playButton.addEventListener("click", async () => {
+      await startSession();
+    });
+
+    elements.pauseButton.addEventListener("click", async () => {
+      await pauseSession();
+    });
+
+    elements.resetButton.addEventListener("click", () => {
+      resetSession();
+    });
+
+    elements.saveSettingsButton.addEventListener("click", () => {
+      saveCurrentSettings();
+    });
+
+    elements.resetSavedButton.addEventListener("click", () => {
+      resetSavedSettings();
+    });
+
+    loadSavedSettings();
+    buildOrbitDots();
+    renderAll();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
