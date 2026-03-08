@@ -7,3 +7,5 @@ It offers guided breathing modes to help users reset, clear the mind, and feel m
 Sharing it here in case it’s useful to anyone looking for a simple tool for daily breathing practice.
 
 Built with ChatGPT Codex
+
+- Hebrew file opens on Hebrew by default 
