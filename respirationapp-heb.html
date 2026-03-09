@@ -676,15 +676,20 @@
     .orb-wrap {
       display: grid;
       place-items: center;
+      width: 100%;
+      max-width: 420px;
+      margin-inline: auto;
       padding: 12px 0;
     }
 
     .orb-shell {
       position: relative;
-      width: min(84vw, 420px);
+      width: 100%;
+      box-sizing: border-box;
       aspect-ratio: 1;
       display: grid;
       place-items: center;
+      margin-inline: auto;
       border-radius: 50%;
       background:
         radial-gradient(circle at center, rgba(255, 255, 255, 0.1), transparent 62%),
@@ -791,6 +796,12 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-size: 0.82rem;
+    }
+
+    .number-flow {
+      direction: ltr;
+      unicode-bidi: isolate;
+      display: inline-block;
     }
 
     .control-row {
@@ -950,7 +961,7 @@
     @media (max-width: 1120px) {
       .layout { grid-template-columns: 1fr; }
       .stage { order: -1; }
-      .orb-shell { width: min(84vw, 390px); }
+      .orb-wrap { max-width: 390px; }
     }
 
     @media (max-width: 640px) {
@@ -959,7 +970,8 @@
       .switches { width: 100%; justify-content: flex-start; }
       .chips { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .phase-grid { grid-template-columns: 1fr; }
-      .orb-shell { width: min(88vw, 340px); }
+      .stage { padding: 18px 12px; }
+      .orb-wrap { max-width: 340px; }
       .control-button { flex: 1 1 30%; min-width: 92px; }
     }
 
@@ -1040,7 +1052,7 @@
           <div class="card">
             <div class="card-head">
               <span data-i18n="pattern">Pattern</span>
-              <span class="mini" id="patternSummary">5 - 5</span>
+              <span class="mini number-flow" id="patternSummary">5 - 5</span>
             </div>
             <div class="preset-grid" id="presetGrid"></div>
             <div class="phase-grid" id="phaseGrid"></div>
@@ -1076,7 +1088,7 @@
 
           <div class="status-row">
             <div class="pill" id="timeLeft">03:00</div>
-            <div class="pill" id="cyclePill">5 - 5</div>
+            <div class="pill number-flow" id="cyclePill">5 - 5</div>
           </div>
 
           <div class="control-row">
@@ -1180,8 +1192,8 @@
         childFlow: "Kids",
         coherenceHint: "Steady in / out",
         relaxHint: "Box breathing",
-        tranquilityHint: "4 - 7 - 8",
-        childFlowHint: "3 - 1 - 5",
+        tranquilityHint: "\u20664 - 7 - 8\u2069",
+        childFlowHint: "\u20663 - 1 - 5\u2069",
         hintAdult: "Slow and steady.",
         hintChild: "Breathe with the glow.",
         sceneAurora: "Aurora",
@@ -1244,8 +1256,8 @@
         childFlow: "ילדים",
         coherenceHint: "קבוע פנימה והחוצה",
         relaxHint: "נשימת קופסה",
-        tranquilityHint: "4 - 7 - 8",
-        childFlowHint: "3 - 1 - 5",
+        tranquilityHint: "\u20664 - 7 - 8\u2069",
+        childFlowHint: "\u20663 - 1 - 5\u2069",
         hintAdult: "לאט ובקצב קבוע.",
         hintChild: "נושמים עם האור.",
         sceneAurora: "זוהר",
@@ -1261,7 +1273,7 @@
         guideCoherence: "קוהרנטיות: ערנות רגועה.",
         guideRelax: "רוגע ומיקוד: מרגיע גוף וממקד מחשבה.",
         guideTranquility: "שלווה: מוריד מתח ומכין לשינה.",
-        guideChildIntro: "3-1-5: מריחים פרח, מחזיקים רגע, ונושפים לאט.",
+        guideChildIntro: "\u20663-1-5\u2069: מריחים פרח, מחזיקים רגע, ונושפים לאט.",
         guideChildWhy: "קצב קצר, פשוט ומשחקי לילדים קטנים.",
         audioOff: "רק רמזים",
         audioOffHint: "רק צלילי רמז",
@@ -2158,10 +2170,12 @@
 
       getCurrentCatalog().modes.forEach((mode) => {
         const button = document.createElement("button");
+        const hintText = translate(mode.hintKey);
+        const hintAttrs = /[0-9]/.test(hintText) ? ' class="number-flow"' : "";
         button.type = "button";
         button.className = "mode-button";
         button.classList.toggle("active", mode.id === state.mode);
-        button.innerHTML = `<strong>${translate(mode.titleKey)}</strong><span>${translate(mode.hintKey)}</span>`;
+        button.innerHTML = `<strong>${translate(mode.titleKey)}</strong><span${hintAttrs}>${hintText}</span>`;
         button.addEventListener("click", () => {
           if (state.mode === mode.id) {
             return;
@@ -2182,10 +2196,12 @@
 
       mode.presets.forEach((preset) => {
         const button = document.createElement("button");
+        const hintText = translate(mode.hintKey);
+        const hintAttrs = /[0-9]/.test(hintText) ? ' class="number-flow"' : "";
         button.type = "button";
         button.className = "preset-button";
         button.classList.toggle("active", preset.id === modeState.presetId);
-        button.innerHTML = `<strong>${preset.label}</strong><span>${translate(mode.hintKey)}</span>`;
+        button.innerHTML = `<strong class="number-flow">${preset.label}</strong><span${hintAttrs}>${hintText}</span>`;
         button.addEventListener("click", () => {
           modeState.presetId = preset.id;
           modeState.phases = clonePhases(preset.phases);
@@ -2588,6 +2604,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
